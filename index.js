@@ -5,14 +5,13 @@ const morgan = require('morgan')
 const cors = require('cors')
 
 app.use(cors())
+app.use(express.static('build'))
+app.use(bodyParser.json())
+app.use(morgan(':method :url :content :status :res[content-length] - :response-time ms'))
 
 morgan.token('content', function getContent (request) {
   return JSON.stringify(request.body)
 })
-
-app.use(bodyParser.json())
-app.use(morgan(':method :url :content :status :res[content-length] - :response-time ms'))
-
 let persons = [
     {
       id: 1,
@@ -60,7 +59,7 @@ app.get('/api/persons/:id', (request, response) => {
   
 
 app.get('/', (request, response) => {
-  response.send('<h1>Hello World!</h1>')
+  response.send('<h1>Welcome!</h1>')
   })
   
   app.get('/api/persons', (request, response) => {
