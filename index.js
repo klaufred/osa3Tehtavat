@@ -87,7 +87,7 @@ app.get('/', (request, response) => {
       return response.status(400).json({error: 'number missing '})
     }
 
-    if (body.name === persons.find(person => person.name === body.name ).name) {
+    if (body.name === persons.find(person => person.name === body.name )) {
       return response.status(400).json({error: 'name used '})
     }
   
