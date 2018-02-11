@@ -154,11 +154,15 @@ app.get('/', (request, response) => {
     if (body.number === undefined) {
       return response.status(400).json({error: 'number missing '})
     }
-/*
-    if (body.name === persons.find(person => person.name === body.name )) {
-      return response.status(400).json({error: 'name used '})
-    }
-  */
+
+  Person
+    .find({})
+    .then(persons => {
+      if (body.name === persons.find(person => person.name === body.name )) {
+        return response.status(400).json({error: 'name used '})
+      }
+    })
+
     const person = new Person({
       name: body.name,
       number: body.number
