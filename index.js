@@ -3,6 +3,7 @@ const app = express()
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.static('build'))
@@ -12,6 +13,17 @@ app.use(morgan(':method :url :content :status :res[content-length] - :response-t
 morgan.token('content', function getContent (request) {
   return JSON.stringify(request.body)
 })
+
+const formatPerson = (person) => {
+  console.log(person)
+  return {
+    name: person.name,
+    number: person.number,
+    id: person._id
+  }
+}
+
+/*
 let persons = [
     {
       id: 1,
@@ -39,8 +51,22 @@ let persons = [
       number: '040-2214999',
     },
 ]
+*/
 
 app.get('/api/persons/:id', (request, response) => {
+  Person
+    .findById(request.params.id)
+    .then(person => {
+      if (person) {
+        response.json(formatPerson(person))
+      } else {
+        response.status(404).end()
+      }
+    }).catch(error => {
+      console.log(error)
+      response.status(400).send({ error: 'malformatted id' })
+    })
+    /*
     const id = Number(request.params.id)
     const person = persons.find(person => person.id === id )
     if ( person ) {
@@ -48,13 +74,24 @@ app.get('/api/persons/:id', (request, response) => {
       } else {
         response.status(404).end()
       }
+      */
   }) 
 
   app.delete('/api/persons/:id', (request, response) => {
+    Person
+      .findByIdAndRemove(request.params.id)
+      .then(result => {
+        response.status(204).end()
+      })
+      .catch(error => {
+        response.status(400).send({ error: 'malformatted id' })
+      })
+    /*
     const id = Number(request.params.id)
     persons = persons.filter(person => person.id !== id)
   
     response.status(204).end()
+    */
   })
   
 
@@ -63,18 +100,49 @@ app.get('/', (request, response) => {
   })
   
   app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person
+      .find({})
+      .then(persons => {
+        response.json(persons.map(formatPerson))
+      }).catch(error => {
+        console.log(error)
+        response.status(404).end()
+      })
+    // response.json(persons)
+  })
+
+  app.put('/api/persons/:id', (request, response) => {
+    const body = request.body
+  
+    const person = new Person({
+      name: body.name,
+      number: body.number,
+    })
+  
+    Person
+      .findByIdAndUpdate(request.params.id, person, { new: false } )
+      .then(updatedPerson => {
+        response.json(formatPerson(updatedPerson))
+      })
+      .catch(error => {
+        console.log(error)
+        response.status(400).send({ error: 'malformatted id' })
+      })
   })
 
   app.get('/info', (request, response) => {
-    response.send('<p>luettelossa on '+ persons.length + ' henkilön tiedot </p>'
+    Person
+      .find({})
+      .then(persons => {
+        response.send('<p>luettelossa on '+ persons.length + ' henkilön tiedot </p>'
     +
     new Date())
-  })
+      }).catch(error => {
+        console.log(error)
+        response.status(404).end()
+      })
 
-  const generateId = () => {
-    return Math.floor(Math.random() * (200 - persons.length) + persons.length)
-  }
+  })
   
   app.post('/api/persons', (request, response) => {
     const body = request.body
@@ -86,21 +154,21 @@ app.get('/', (request, response) => {
     if (body.number === undefined) {
       return response.status(400).json({error: 'number missing '})
     }
-
+/*
     if (body.name === persons.find(person => person.name === body.name )) {
       return response.status(400).json({error: 'name used '})
     }
-  
-    const person = {
+  */
+    const person = new Person({
       name: body.name,
-      number: body.number,
-      content: body.content,
-      id: generateId()
-    }
+      number: body.number
+    })
   
-    persons = persons.concat(person)
-  
-    response.json(person)
+    person
+      .save()
+      .then(savedPerson => {
+        response.json(formatPerson(savedPerson))
+      })
   })
 
   const PORT = process.env.PORT || 3001
